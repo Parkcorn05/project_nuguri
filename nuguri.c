@@ -109,7 +109,11 @@ int main() {
 
 
 // 터미널 Raw 모드 활성화/비활성화
-void disable_raw_mode() { tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios); }
+void disable_raw_mode() ////Raw 모드란? 터미널 원시 모드 - Raw모드에서 시스템은 입력된 문자를 사용자 프로그램으로 즉시 전달
+{ 
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios); 
+}
+
 void enable_raw_mode() {
     tcgetattr(STDIN_FILENO, &orig_termios);
     atexit(disable_raw_mode);
@@ -134,8 +138,8 @@ void load_maps() {
             continue;
         }
         if (r < MAP_HEIGHT) {
-            line[strcspn(line, "\n\r")] = 0;
-            strncpy(map[s][r], line, MAP_WIDTH + 1);
+            line[strcspn(line, "\n\r")] = 0; ////strcspn(char* str1, char* str2) - str2에 들어있는 '문자들' 중에서 str1에 들어있는 '문자'와 일치하는 것이 있다면 첫번째로 일치하는 문자까지 읽어들인 수를 리턴
+            strncpy(map[s][r], line, MAP_WIDTH + 1); ////strncpy(char* str1, char* str2, int count) - string2의 count자를 string1에 복사
             r++;
         }
     }
@@ -168,7 +172,7 @@ void init_stage() {
 
 // 게임 화면 그리기
 void draw_game() {
-    printf("\x1b[2J\x1b[H");
+    printf("\x1b[2J\x1b[H"); ////x1b : 이스케이프 시퀀스 시작 ,[2J : 전체화면 지우기, [H: 1,1로 이동
     printf("Stage: %d | Score: %d\n", stage + 1, score);
     printf("조작: ← → (이동), ↑ ↓ (사다리), Space (점프), q (종료)\n");
 
