@@ -9,7 +9,7 @@
 #define LF "\r\n"
 
 void clrscr();
-void delay(int);
+void delay(int t);
 void disable_raw_mode();
 void enable_raw_mode();
 
