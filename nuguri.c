@@ -15,6 +15,7 @@
 
 #ifdef linux
 #include <termios.h>
+#include <conio.h>
 #endif
 
 #ifdef __MACH__
