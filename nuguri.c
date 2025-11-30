@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-
-#include <fcntl.h>
 #include <time.h>
 
 #ifdef _WIN32
@@ -26,6 +23,7 @@
 #define MAX_ENEMIES 15 // 최대 적 개수 증가
 #define MAX_COINS 30   // 최대 코인 개수 증가
 
+// 방향키 판단을 위한 define (-32 catch 한 이후 판단)
 #define UP 72
 #define DOWN 80
 #define LEFT 75
@@ -63,12 +61,7 @@ int enemy_count = 0;
 Coin coins[MAX_COINS];
 int coin_count = 0;
 
-// 터미널 설정
-struct termios orig_termios;
-
 // 함수 선언
-void disable_raw_mode();
-void enable_raw_mode();
 void load_maps();
 void init_stage();
 void draw_game();
@@ -85,6 +78,9 @@ void clrscr();
 int main() {
     srand(time(NULL));
     enable_raw_mode();
+    
+    opening();
+    
     load_maps();
     init_stage();
 
@@ -98,14 +94,8 @@ int main() {
                 game_over = 1;
                 continue;
             }
-            if (c == '\x1b') {
-                getchar(); // '['
-                switch (getchar()) {
-                    case 'A': c = UP; break; // Up
-                    case 'B': c = DOWN; break; // Down
-                    case 'C': c = RIGHT; break; // Right
-                    case 'D': c = LEFT; break; // Left
-                }
+            if (c == -32) {
+                c = getchar();
             }
         } else {
             c = '\0';
@@ -134,19 +124,6 @@ int main() {
 }
 
 
-// 터미널 Raw 모드 활성화/비활성화
-void disable_raw_mode() ////Raw 모드란? 터미널 원시 모드 - Raw모드에서 시스템은 입력된 문자를 사용자 프로그램으로 즉시 전달
-{ 
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios); 
-}
-
-void enable_raw_mode() {
-    tcgetattr(STDIN_FILENO, &orig_termios);
-    atexit(disable_raw_mode);
-    struct termios raw = orig_termios;
-    raw.c_lflag &= ~(ECHO | ICANON);
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-}
 
 // 맵 파일 로드
 void load_maps() {
@@ -167,8 +144,10 @@ void load_maps() {
             // 윈도우즈에서는 "\r\n" 사용하는 경우가 많다고 하는데, os마다 고려해서 예외처리가 필요할 거 같습니다.
             // 그래서 그냥 운영체제별로 개행 #define LF 로 해놓음, 문자열 형태 window: \r\n  macos: \r  linux: \n
             // 참고: https://teck10.tistory.com/296
+            
             line[strcspn(line, LF)] = 0; ////strcspn(char* str1, char* str2) - str2에 들어있는 '문자들' 중에서 str1에 들어있는 '문자'와 일치하는 것이 있다면 첫번째로 일치하는 문자까지 읽어들인 수를 리턴
             // ㄴ 근데 이거 필요한 거 맞음???
+            
             strncpy(map[s][r], line, MAP_WIDTH + 1); ////strncpy(char* str1, char* str2, int count) - string2의 count자를 string1에 복사
             // 그냥 문자열 마지막 NULL 안줘도 되는 거 아님?? 어차피 MAP_WIDTH까지밖에 탐색(출력) 안 하잖음
             r++;
@@ -371,4 +350,43 @@ void mallocFree() {
         free(map[i]);
     }
     free(map);
+}
+
+// 너구리 배너 띄우려고 만든 코드
+void readBanner(char* str){
+    FILE *file = fopen(str, "r");
+    if (!file) {
+		perror("파일을 열 수 없습니다.");
+		exit(1);
+    }
+    int h = 0, r = 0;
+    char C;
+    char line[45];
+	
+	while (h<11 && fgets(line, sizeof(line), file)) {
+		printf(line);
+		h++;
+	}
+	fclose(file);
+}
+
+// 시작화면
+void opening(){
+	int select = 0;
+	char c;
+	while(1){
+		clrscr();
+		readBanner("banner.txt");
+		printf(LF LF "         press Enter to select" LF LF);
+		
+		if (select==0) printf("         > START        EXIT");
+		else printf("           START      > EXIT");
+		
+		c = getch();
+		if (c==LEFT && select!=0) select--;
+		else if (c==RIGHT && select!=1) select++;
+		else if (c== LF[0]) break;
+	}
+	if (select == 0) return;
+	else exit(1);
 }
