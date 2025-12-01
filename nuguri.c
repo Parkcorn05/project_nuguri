@@ -59,12 +59,14 @@ void move_player(char input);
 void move_enemies();
 void check_collisions();
 int kbhit();
-void setMapMemory(int width, int height);
-void getMapSize();
+void setMapMemory(int s, int width, int height);
+void getMapSize(int s);
+void mallocFree(int s);
 
 int main() {
     srand(time(NULL));
     enable_raw_mode();
+    getMapSize(stage);
     load_maps();
     init_stage();
 
@@ -96,7 +98,10 @@ int main() {
         usleep(90000);
 
         if (map[stage][player_y][player_x] == 'E') {
+            mallocFree(stage);
             stage++;
+            getMapSize(stage);
+            load_maps();
             score += 100;
             if (stage < MAX_STAGES) {
                 init_stage();
@@ -329,43 +334,66 @@ int kbhit() {
     return 0;
 }
 
-void setMapMemory(int width, int height) {
-    int i =0, j = 0;
+void setMapMemory(int s, int width, int height) {
+    int i = 0;
     MAP_HEIGHT = height;
     MAP_WIDTH = width;
-    map = (char***)malloc(sizeof(char**) * 2); //MAX_STAGE
-    for(i = 0; i < 2; i++){
-        map[i] = (char**)malloc(sizeof(char*) * height);  //MAP_HEIGHT
-        for(j = 0; j < MAP_HEIGHT; j++){
-            map[i][j] = (char*)malloc(sizeof(char) * width); //MAP_WIDTH
+        map[s] = (char**)malloc(sizeof(char*) * height);  //MAP_HEIGHT
+        for(i = 0; i < MAP_HEIGHT; i++){
+            map[s][i] = (char*)malloc(sizeof(char) * width); //MAP_WIDTH
         }
     }
-}
 
-void getMapSize() {
-    int width;
-    int height = 0;
-    char buffer[45];
+
+void getMapSize(int s) {
+    int width = 0, height = 0;
+    int temp_stage = 0 , check_stage = 0;
+    char temp;
 
     FILE *file = fopen("map.txt", "r");
     if (!file) {
         perror("map.txt 파일을 열 수 없습니다.");
         exit(1);
     }
-    while(fscanf(file,"%s",buffer) != EOF) height++;
-        width = sizeof(buffer) / sizeof(char);
-
-    setMapMemory(width, height);
+    while(fscanf(file,"%c",&temp) != EOF && temp_stage != stage){
+        switch(temp){
+            case '\n':
+                if(check_stage == 1){
+                    temp_stage++;
+                }
+                check_stage = 1;
+                break;
+            default:
+                check_stage = 0;
+                continue;
+        }
+    }
+    check_stage = 0;
+    while(fscanf(file,"%c",&temp) != EOF){
+        switch(temp){
+            case'\n':
+                if(check_stage == 1){
+                    goto result;
+                }
+                height++;
+                width = 0;
+                break;
+            default:
+                check_stage = 0;
+                width++;
+                break;
+        }
+    }
+    result: 
+    setMapMemory(s, width, height);
     fclose(file);
 }
 
-void mallocFree() {
-    int i = 0, j = 0;
-    for(i = 0; i < 2; i++){
-        for(j = 0; j < MAP_HEIGHT; j++){
-            free(map[i][j]);
-        }
-        free(map[i]);
+void mallocFree(int s) {
+    int i = 0;
+
+    for(i= 0; i < MAP_HEIGHT; i++){
+        free(map[s][i]);
     }
-    free(map);
+    free(map[s]);
 }
