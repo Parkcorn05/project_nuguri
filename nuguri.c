@@ -46,6 +46,8 @@ int MAP_HEIGHT;
 int MAP_WIDTH;
 char*** map;
 
+char DEBUGGING = 0;
+
 int player_x, player_y;
 int stage = 0;
 int score = 0;
@@ -74,39 +76,37 @@ void getMapSize();
 void readBanner(char* str, int height);
 void opening();
 
+void DBG(char* str); //debugging print
+
 
 int main() {
     srand(time(NULL));
     enable_raw_mode();
-    
+	
     opening();
-    
-	printf("\nopening() successed\n");
+	getMapSize();
     load_maps();
-	printf("\nload_maps() successed\n");
     init_stage();
-	printf("\ninit_stage()	successed\n");
 
     char c = '\0';
     int game_over = 0;
-
+	
     while (!game_over && stage < MAX_STAGES) {
+		
         if (kbhit()) {
             c = getchar();
             if (c == 'q') {
                 game_over = 1;
                 continue;
             }
-            if (c == -32) {
+            if (c == -32) { // 화살표 입력 받기위한 (화살표 입력하면 -32가 먼저 입력된 후 72,80 등 고유 숫자가 입력됨.)
                 c = getchar();
             }
         } else {
             c = '\0';
         }
-
         update_game(c);
         draw_game();
-        delay(90);
 
         if (map[stage][player_y][player_x] == 'E') {
             stage++;
@@ -120,6 +120,7 @@ int main() {
                 printf("최종 점수: %d\n", score);
             }
         }
+		
     }
 
     disable_raw_mode();
@@ -130,17 +131,26 @@ int main() {
 
 // 맵 파일 로드
 void load_maps() {
+	if(DEBUGGING) DBG("load_maps() started");
+	if(DEBUGGING) delay(500);
+	
     FILE *file = fopen("map.txt", "r");
     if (!file) {
         perror("map.txt 파일을 열 수 없습니다.");
         exit(1);
     }
+	
     int s = 0, r = 0;
     char line[MAP_WIDTH + 2]; // 버퍼 크기는 MAP_WIDTH에 따라 자동 조절됨
     while (s < MAX_STAGES && fgets(line, sizeof(line), file)) {
-        if ((line[0] == '\n' || line[0] == '\r') && r > 0) {
+		if(DEBUGGING) DBG("in while");
+		if(DEBUGGING) delay(30);
+		
+        if ((line[0] == '\n') && r > 0) { // map.txt 파일은 LF만 사용하므로, \n만 확인해도 됨.
             s++;
             r = 0;
+			if(DEBUGGING) DBG("in load_maps() stage plused");
+			if(DEBUGGING) delay(500);
             continue;
         }
         if (r < MAP_HEIGHT) {
@@ -149,18 +159,23 @@ void load_maps() {
             // 참고: https://teck10.tistory.com/296
             
             line[strcspn(line, LF)] = 0; ////strcspn(char* str1, char* str2) - str2에 들어있는 '문자들' 중에서 str1에 들어있는 '문자'와 일치하는 것이 있다면 첫번째로 일치하는 문자까지 읽어들인 수를 리턴
-            // ㄴ 근데 이거 필요한 거 맞음???
+            strncpy(map[s][r], line, MAP_WIDTH); ////strncpy(char* str1, char* str2, int count) - string2의 count자를 string1에 복사
             
-            strncpy(map[s][r], line, MAP_WIDTH + 1); ////strncpy(char* str1, char* str2, int count) - string2의 count자를 string1에 복사
-            // 그냥 문자열 마지막 NULL 안줘도 되는 거 아님?? 어차피 MAP_WIDTH까지밖에 탐색(출력) 안 하잖음
+			// 수정중
             r++;
         }
     }
     fclose(file);
+	
+	if(DEBUGGING) DBG("load_maps() ended");
+	if(DEBUGGING) delay(500);
 }
 
 // 현재 스테이지 초기화
 void init_stage() {
+	if(DEBUGGING) DBG("init_stage(); started");
+	if(DEBUGGING) delay(300);
+	
     enemy_count = 0;
     coin_count = 0;
     is_jumping = 0;
@@ -180,14 +195,18 @@ void init_stage() {
             }
         }
     }
+	if(DEBUGGING) DBG("init_stage(); ended");
+	if(DEBUGGING) delay(300);
 }
 
 // 게임 화면 그리기
 void draw_game() {
+	if(DEBUGGING) DBG("draw_game(); started");
+	if(DEBUGGING) delay(300);
     clrscr();
     printf("Stage: %d | Score: %d\n", stage + 1, score);
     printf("조작: ← → (이동), ↑ ↓ (사다리), Space (점프), q (종료)\n");
-
+	
     char display_map[MAP_HEIGHT][MAP_WIDTH + 1];
     for(int y=0; y < MAP_HEIGHT; y++) {
         for(int x=0; x < MAP_WIDTH; x++) {
@@ -218,21 +237,36 @@ void draw_game() {
         }
         printf("\n");
     }
+	
+	if(DEBUGGING) DBG("draw_game(); ended");
+	if(DEBUGGING) delay(300);
 }
 
 // 게임 상태 업데이트
 void update_game(char input) {
-    move_player(input);
+    if(DEBUGGING) DBG("update_game(); started");
+	if(DEBUGGING) delay(300);
+	
+	move_player(input);
     move_enemies();
     check_collisions();
+	
+	if(DEBUGGING) DBG("update_game(); ended");
+	if(DEBUGGING) delay(300);
 }
 
 // 플레이어 이동 로직
 void move_player(char input) {
+	if(DEBUGGING) DBG("move_player(); started");
+	if(DEBUGGING) delay(300);
+	
     int next_x = player_x, next_y = player_y;
     char floor_tile = (player_y + 1 < MAP_HEIGHT) ? map[stage][player_y + 1][player_x] : '#';
+	// 삼항연산자, (조건) ? (참일때 값) : (거짓일 때 값)
+	// floor_tile : 플레이어 발 아래의 블록이 무엇인지
+	
     char current_tile = map[stage][player_y][player_x];
-
+	
     on_ladder = (current_tile == 'H');
 
     switch (input) {
@@ -240,7 +274,7 @@ void move_player(char input) {
         case RIGHT:  next_x++; break;
         case UP:     if (on_ladder) next_y--; break;
         case DOWN:   if (on_ladder && (player_y + 1 < MAP_HEIGHT) && map[stage][player_y + 1][player_x] != '#') next_y++; break;
-        case ' ':
+        case ' ': // 점프
             if (!is_jumping && (floor_tile == '#' || on_ladder)) {
                 is_jumping = 1;
                 velocity_y = -2;
@@ -248,45 +282,51 @@ void move_player(char input) {
             break;
     }
 
-    if (next_x >= 0 && next_x < MAP_WIDTH && map[stage][player_y][next_x] != '#') player_x = next_x;
+    if (next_x >= 0 && next_x < MAP_WIDTH && map[stage][player_y][next_x] != '#') player_x = next_x; // 땅 위에서 좌우이동
     
-    if (on_ladder && (input == 'w' || input == 's')) {
+    if (on_ladder && (input == UP || input == DOWN)) { //사다리 위아래 이동
         if(next_y >= 0 && next_y < MAP_HEIGHT && map[stage][next_y][player_x] != '#') {
             player_y = next_y;
             is_jumping = 0;
             velocity_y = 0;
         }
-    } 
-    else {
-        if (is_jumping) {
+    } else { // 사다리에서 위아래로 이동 중이 아닐때
+        if (is_jumping) { // 점프중에~
             next_y = player_y + velocity_y;
-            if(next_y < 0) next_y = 0;
-            velocity_y++;
+            if(next_y < 0) next_y = 0; // 0보다 작아지지 않게
+            velocity_y++; // 중력가속도(클수록 아래로)
 
-            if (velocity_y < 0 && next_y < MAP_HEIGHT && map[stage][next_y][player_x] == '#') {
-                velocity_y = 0;
-            } else if (next_y < MAP_HEIGHT) {
+            if (velocity_y > 0 && (next_y < MAP_HEIGHT || map[stage][next_y][player_x] == '#')) { // 행선지가 땅일때, 땅보다 아래로 향할 때 (수정됨)
+                next_y = MAP_HEIGHT-1; // 테스트 필요 (추가됨)
+				velocity_y = 0;
+            } else if (next_y < MAP_HEIGHT) { // 행선지가 땅에 닿지 않을 때
                 player_y = next_y;
             }
-            
-            if ((player_y + 1 < MAP_HEIGHT) && map[stage][player_y + 1][player_x] == '#') {
+			
+            if ((player_y + 1 < MAP_HEIGHT) && map[stage][player_y + 1][player_x] == '#') { // 이미 땅에 닿아있을 때
                 is_jumping = 0;
                 velocity_y = 0;
             }
-        } else {
-            if (floor_tile != '#' && floor_tile != 'H') {
-                 if (player_y + 1 < MAP_HEIGHT) player_y++;
+        } else { // 점프중이 아니면~
+            if (floor_tile != '#' && floor_tile != 'H') { // 땅 위도 사다리 위도 아닐 때 (허공일 때)
+                 if (player_y + 1 < MAP_HEIGHT) player_y++; // 맵을 벗어나지 않으면 아래로 한 칸 이동
                  else init_stage();
             }
         }
     }
     
     if (player_y >= MAP_HEIGHT) init_stage();
+	
+	if(DEBUGGING) DBG("move_player(); ended");
+	if(DEBUGGING) delay(300);
 }
 
 
 // 적 이동 로직
 void move_enemies() {
+	if(DEBUGGING) DBG("move_enemies(); started");
+	if(DEBUGGING) delay(300);
+	
     for (int i = 0; i < enemy_count; i++) {
         int next_x = enemies[i].x + enemies[i].dir;
         if (next_x < 0 || next_x >= MAP_WIDTH || map[stage][enemies[i].y][next_x] == '#' || (enemies[i].y + 1 < MAP_HEIGHT && map[stage][enemies[i].y + 1][next_x] == ' ')) {
@@ -295,10 +335,16 @@ void move_enemies() {
             enemies[i].x = next_x;
         }
     }
+	
+	if(DEBUGGING) DBG("move_enemies(); ended");
+	if(DEBUGGING) delay(300);
 }
 
 // 충돌 감지 로직
 void check_collisions() {
+	if(DEBUGGING) DBG("check_collisions(); started");
+	if(DEBUGGING) delay(300);
+	
     for (int i = 0; i < enemy_count; i++) {
         if (player_x == enemies[i].x && player_y == enemies[i].y) {
             score = (score > 50) ? score - 50 : 0;
@@ -312,23 +358,39 @@ void check_collisions() {
             score += 20;
         }
     }
+	
+	if(DEBUGGING) DBG("check_collisions(); ended");
+	if(DEBUGGING) delay(300);
 }
 
+// 전역변수에 맵 사이즈 반영
 void setMapMemory(int width, int height) {
+	if(DEBUGGING) DBG("setMapMemory(); started");
+	if(DEBUGGING) delay(300);
+	
     int i =0, j = 0;
     MAP_HEIGHT = height;
     MAP_WIDTH = width;
-    map = (char***)malloc(sizeof(char**) * 2); //MAX_STAGE
-    for(i = 0; i < 2; i++){
-        map[i] = (char**)malloc(sizeof(char*) * height);  //MAP_HEIGHT
+	
+	//전역 함수 활용하게 수정
+    map = (char***)malloc(sizeof(char**) * MAX_STAGES); // MAX_STAGES
+    for(i = 0; i < MAX_STAGES; i++){ 
+        map[i] = (char**)malloc(sizeof(char*) * MAP_HEIGHT);  //MAP_HEIGHT
         for(j = 0; j < MAP_HEIGHT; j++){
-            map[i][j] = (char*)malloc(sizeof(char) * width); //MAP_WIDTH
+            map[i][j] = (char*)malloc(sizeof(char) * MAP_WIDTH); //MAP_WIDTH
         }
     }
+	
+	if(DEBUGGING) DBG("setMapMemory(); ended");
+	if(DEBUGGING) delay(300);
 }
 
+// 맵 사이즈 계산
 void getMapSize() {
-    int width;
+	if(DEBUGGING) DBG("getMapSize(); started");
+	if(DEBUGGING) delay(300);
+	
+    int width = 0;
     int height = 0;
     char buffer[45];
 
@@ -337,11 +399,15 @@ void getMapSize() {
         perror("map.txt 파일을 열 수 없습니다.");
         exit(1);
     }
+	
     while(fscanf(file,"%s",buffer) != EOF) height++;
         width = sizeof(buffer) / sizeof(char);
 
     setMapMemory(width, height);
     fclose(file);
+	
+	if(DEBUGGING) DBG("getMapSize(); ended");
+	if(DEBUGGING) delay(300);
 }
 
 void mallocFree() {
@@ -408,14 +474,14 @@ void opening(){
 			if (c==LEFT && select!=0) {select--; gotoxy(x,14); printf(" ");}
 			else if (c==RIGHT && select!=1) {select++; gotoxy(x,14); printf(" ");}
 		} else if (c=='d'){ // 디버깅 모드 진입
-			if (d==0) d = 1;
+			if (d==0) {d = 1;}
 			else d = 0;
 		} else if (c== LF[0]) break;
 		
 		if (d==1){
 			gotoxy(0,12);
 			printf("        Debuging mode activated" LF LF);
-			printf("           ENDING       EXIT");
+			printf("           START        ENDING");
 		} else{
 			gotoxy(0,12);
 			printf("         press Enter to select" LF LF);
@@ -427,9 +493,18 @@ void opening(){
 		if (select == 0) return;
 		else exit(1);
 	}else if (d==1){
-		if (select == 0){ //ending
+		if (select == 0){ //debug start
+			DEBUGGING = 1;
+			return;
+		} else{ //ending
 			ending();
 			return;
-		} else exit(1);
+		}
 	}
+}
+
+void DBG(char* str){
+	gotoxy(0,30);
+	printf("//%s   ", str);
+	return;
 }
