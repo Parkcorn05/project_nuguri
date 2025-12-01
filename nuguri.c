@@ -71,7 +71,7 @@ void move_enemies();
 void check_collisions();
 void setMapMemory(int width, int height);
 void getMapSize();
-void readBanner(char* str);
+void readBanner(char* str, int height);
 void opening();
 
 
@@ -81,8 +81,11 @@ int main() {
     
     opening();
     
+	printf("\nopening() successed\n");
     load_maps();
+	printf("\nload_maps() successed\n");
     init_stage();
+	printf("\ninit_stage()	successed\n");
 
     char c = '\0';
     int game_over = 0;
@@ -353,7 +356,7 @@ void mallocFree() {
 }
 
 // 너구리 배너 띄우려고 만든 코드
-void readBanner(char* str){
+void readBanner(char* str, int height){
     FILE *file = fopen(str, "r");
     if (!file) {
 		perror("파일을 열 수 없습니다.");
@@ -361,34 +364,72 @@ void readBanner(char* str){
     }
     int h = 0, r = 0;
     char C;
-    char line[45];
+    char line[50];
 	
-	while (h<11 && fgets(line, sizeof(line), file)) {
+	while (h<height && fgets(line, sizeof(line), file)) {
 		printf(line);
 		h++;
 	}
 	fclose(file);
 }
 
+// 엔딩화면
+void ending(){
+	clrscr();
+	readBanner("endAni1.txt", 20);
+	printf(LF LF "             >> YOU WIN <<" LF LF);
+	return;
+}
+
 // 시작화면
 void opening(){
 	int select = 0;
+	int d = 0;
 	char c;
+	
+	clrscr();
+	readBanner("banner.txt", 11);
+	printf(LF LF "         press Enter to select" LF LF);
+	printf("           START        EXIT");
+	
 	while(1){
-		clrscr();
-		readBanner("banner.txt");
-		printf(LF LF "         press Enter to select" LF LF);
 		
-		if (select==0) printf("         > START        EXIT");
-		else printf("           START      > EXIT");
+		int x;
+		if (select==0) x=9;
+		else x=22;
+		
+		gotoxy(x,14);
+		printf(">");
+		gotoxy(0,16);
 		
 		c = getch();
-		if (c==-32) c = getchar();
+		if (c==-32){ //화살표 입력을 받았을 때
+			c = getch();
+			if (c==LEFT && select!=0) {select--; gotoxy(x,14); printf(" ");}
+			else if (c==RIGHT && select!=1) {select++; gotoxy(x,14); printf(" ");}
+		} else if (c=='d'){ // 디버깅 모드 진입
+			if (d==0) d = 1;
+			else d = 0;
+		} else if (c== LF[0]) break;
 		
-		if (c==LEFT && select!=0) select--;
-		else if (c==RIGHT && select!=1) select++;
-		else if (c== LF[0]) break;
+		if (d==1){
+			gotoxy(0,12);
+			printf("        Debuging mode activated" LF LF);
+			printf("           ENDING       EXIT");
+		} else{
+			gotoxy(0,12);
+			printf("         press Enter to select" LF LF);
+			printf("           START        EXIT");
+		}
 	}
-	if (select == 0) return;
-	else exit(1);
+	
+	if (d==0){
+		if (select == 0) return;
+		else exit(1);
+	}else if (d==1){
+		if (select == 0){ //ending
+			ending();
+			return;
+		} else exit(1);
+	}
 }
