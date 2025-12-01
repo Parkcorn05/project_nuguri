@@ -14,7 +14,7 @@ void clrscr(); // 화면 클리어 함수
 void delay(int t); // 마이크로초단위 sleep 함수
 void disable_raw_mode(); // main 에서 쓰는관계로 일단 빈 코드로 구현
 void enable_raw_mode(); // 22
-void gotoxy(int x, int y); // 커서위치 draw 함수
+void gotoxy(int x, int y); // 커서위치를 이동하는 함수
 
 void clrscr() {
     system("cls"); // windows.h 내부 함수 사용하여 구현
