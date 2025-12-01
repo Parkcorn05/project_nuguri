@@ -100,7 +100,7 @@ int main() {
                 continue;
             }
             if (c == -32) { // 화살표 입력 받기위한 (화살표 입력하면 -32가 먼저 입력된 후 72,80 등 고유 숫자가 입력됨.)
-                c = getchar();
+                c = getch();
             }
         } else {
             c = '\0';
@@ -120,7 +120,6 @@ int main() {
                 printf("최종 점수: %d\n", score);
             }
         }
-		
     }
 
     disable_raw_mode();
@@ -143,8 +142,8 @@ void load_maps() {
     int s = 0, r = 0;
     char line[MAP_WIDTH + 2]; // 버퍼 크기는 MAP_WIDTH에 따라 자동 조절됨
     while (s < MAX_STAGES && fgets(line, sizeof(line), file)) {
-		if(DEBUGGING) DBG("in while");
-		if(DEBUGGING) delay(30);
+		//if(DEBUGGING) DBG("in while");
+		//if(DEBUGGING) delay(30);
 		
         if ((line[0] == '\n') && r > 0) { // map.txt 파일은 LF만 사용하므로, \n만 확인해도 됨.
             s++;
@@ -158,9 +157,9 @@ void load_maps() {
             // 그래서 그냥 운영체제별로 개행 #define LF 로 해놓음, 문자열 형태 window: \r\n  macos: \r  linux: \n
             // 참고: https://teck10.tistory.com/296
             
-            line[strcspn(line, LF)] = 0;
+            //line[strcspn(line, LF)] = 0;
 			//strcspn(char* str1, char* str2) - str2에 들어있는 '문자들' 중에서 str1에 들어있는 '문자'와 일치하는 것이 있다면 첫번째로 일치하는 문자까지 읽어들인 수를 리턴
-            strncpy(map[s][r], line, MAP_WIDTH + 1);
+            strncpy(map[s][r], line, MAP_WIDTH);
 			//strncpy(char* str1, char* str2, int count) - string2의 count자를 string1에 복사
             
             r++;
@@ -286,7 +285,11 @@ void move_player(char input) {
     if (next_x >= 0 && next_x < MAP_WIDTH && map[stage][player_y][next_x] != '#') player_x = next_x; // 땅 위에서 좌우이동
     
     if (on_ladder && (input == UP || input == DOWN)) { //사다리 위아래 이동
-        if(next_y >= 0 && next_y < MAP_HEIGHT && map[stage][next_y][player_x] != '#') {
+		if (next_y >= 0 && input == UP && map[stage][next_y][player_x] == '#'){ //사다리 끝에서 위로 이동했을 때
+			player_y = next_y-1;
+            is_jumping = 0;
+            velocity_y = 0;
+		}else if (next_y >= 0 && next_y < MAP_HEIGHT && map[stage][next_y][player_x] != '#') {
             player_y = next_y;
             is_jumping = 0;
             velocity_y = 0;
@@ -297,16 +300,16 @@ void move_player(char input) {
             if(next_y < 0) next_y = 0; // 0보다 작아지지 않게
             velocity_y++; // 중력가속도(클수록 아래로)
 
-            if (velocity_y > 0 && (next_y < MAP_HEIGHT || map[stage][next_y][player_x] == '#')) { // 행선지가 땅일때, 땅보다 아래로 향할 때 (수정됨)
-                next_y = MAP_HEIGHT-1; // 테스트 필요 (추가됨)
+            if (velocity_y > 0 && (next_y > MAP_HEIGHT || map[stage][next_y][player_x] == '#')) { // 행선지가 땅일때, 땅보다 아래로 향할 때 (수정됨)
 				velocity_y = 0;
             } else if (next_y < MAP_HEIGHT) { // 행선지가 땅에 닿지 않을 때
                 player_y = next_y;
             }
 			
-            if ((player_y + 1 < MAP_HEIGHT) && map[stage][player_y + 1][player_x] == '#') { // 이미 땅에 닿아있을 때
+            if ((player_y + 1 > MAP_HEIGHT) || map[stage][player_y + 1][player_x] == '#') { // 이미 땅에 닿아있을 때
                 is_jumping = 0;
                 velocity_y = 0;
+				next_y = MAP_HEIGHT-1;
             }
         } else { // 점프중이 아니면~
             if (floor_tile != '#' && floor_tile != 'H') { // 땅 위도 사다리 위도 아닐 때 (허공일 때)
@@ -321,7 +324,6 @@ void move_player(char input) {
 	if(DEBUGGING) DBG("move_player(); ended");
 	if(DEBUGGING) delay(300);
 }
-
 
 // 적 이동 로직
 void move_enemies() {
