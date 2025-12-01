@@ -71,7 +71,7 @@ void update_game(char input);
 void move_player(char input);
 void move_enemies();
 void check_collisions();
-void setMapMemory(int width, int height);
+void setMapMemory();
 void getMapSize();
 void readBanner(char* str, int height);
 void opening();
@@ -94,7 +94,7 @@ int main() {
     while (!game_over && stage < MAX_STAGES) {
 		
         if (kbhit()) {
-            c = getchar();
+            c = getch();
             if (c == 'q') {
                 game_over = 1;
                 continue;
@@ -158,10 +158,11 @@ void load_maps() {
             // 그래서 그냥 운영체제별로 개행 #define LF 로 해놓음, 문자열 형태 window: \r\n  macos: \r  linux: \n
             // 참고: https://teck10.tistory.com/296
             
-            line[strcspn(line, LF)] = 0; ////strcspn(char* str1, char* str2) - str2에 들어있는 '문자들' 중에서 str1에 들어있는 '문자'와 일치하는 것이 있다면 첫번째로 일치하는 문자까지 읽어들인 수를 리턴
-            strncpy(map[s][r], line, MAP_WIDTH); ////strncpy(char* str1, char* str2, int count) - string2의 count자를 string1에 복사
+            line[strcspn(line, LF)] = 0;
+			//strcspn(char* str1, char* str2) - str2에 들어있는 '문자들' 중에서 str1에 들어있는 '문자'와 일치하는 것이 있다면 첫번째로 일치하는 문자까지 읽어들인 수를 리턴
+            strncpy(map[s][r], line, MAP_WIDTH + 1);
+			//strncpy(char* str1, char* str2, int count) - string2의 count자를 string1에 복사
             
-			// 수정중
             r++;
         }
     }
@@ -232,7 +233,7 @@ void draw_game() {
     display_map[player_y][player_x] = 'P';
 
     for (int y = 0; y < MAP_HEIGHT; y++) {
-        for(int x=0; x< MAP_WIDTH; x++){
+        for(int x = 0; x < MAP_WIDTH; x++){
             printf("%c", display_map[y][x]);
         }
         printf("\n");
@@ -363,16 +364,14 @@ void check_collisions() {
 	if(DEBUGGING) delay(300);
 }
 
-// 전역변수에 맵 사이즈 반영
-void setMapMemory(int width, int height) {
+// 맵 전역변수에 동적 메모리 할당
+void setMapMemory() {
 	if(DEBUGGING) DBG("setMapMemory(); started");
 	if(DEBUGGING) delay(300);
 	
     int i =0, j = 0;
-    MAP_HEIGHT = height;
-    MAP_WIDTH = width;
 	
-	//전역 함수 활용하게 수정
+	//전역 변수 활용하게 수정
     map = (char***)malloc(sizeof(char**) * MAX_STAGES); // MAX_STAGES
     for(i = 0; i < MAX_STAGES; i++){ 
         map[i] = (char**)malloc(sizeof(char*) * MAP_HEIGHT);  //MAP_HEIGHT
@@ -390,7 +389,6 @@ void getMapSize() {
 	if(DEBUGGING) DBG("getMapSize(); started");
 	if(DEBUGGING) delay(300);
 	
-    int width = 0;
     int height = 0;
     char buffer[45];
 
@@ -400,12 +398,26 @@ void getMapSize() {
         exit(1);
     }
 	
+	while(fgets(buffer, sizeof(buffer), file) != NULL){
+		if (buffer[0] == '\n'){
+			if (MAP_HEIGHT < height) MAP_HEIGHT = height;
+			height=0;
+		}else height++;
+	}
+	if (MAP_HEIGHT < height) MAP_HEIGHT = height;
+    MAP_WIDTH = strlen(buffer);
+	
+	/*
+	height 267?? 정도 나옴, 이렇게 쓰면 안됨.
     while(fscanf(file,"%s",buffer) != EOF) height++;
         width = sizeof(buffer) / sizeof(char);
-
-    setMapMemory(width, height);
+		ㄴ 이렇게하면 buffer 사이즈만큼 설정됨, 45로 잡힌다는 거임
+	*/
+    setMapMemory();
     fclose(file);
 	
+	//width 45
+	if(DEBUGGING) printf("///MAP_WIDTH: %d, MAP_HEIGHT: %d   ", MAP_WIDTH, MAP_HEIGHT);
 	if(DEBUGGING) DBG("getMapSize(); ended");
 	if(DEBUGGING) delay(300);
 }
