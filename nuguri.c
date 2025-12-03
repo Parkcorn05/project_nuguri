@@ -279,11 +279,10 @@ void move_player(char input) {
             if (!is_jumping && (floor_tile == '#' || on_ladder)) {
                 is_jumping = 1;
                 velocity_y = -2;
-            }
-            break;
+            } break;
     }
 
-    if (next_x >= 0 && next_x < MAP_WIDTH[stage] && map[stage][player_y][next_x] != '#') player_x = next_x; // 땅 위에서 좌우이동
+    if ((floor_tile == '#' || is_jumping == 1) && map[stage][player_y][next_x] != '#') player_x = next_x; // 땅 위에서 좌우이동
     
     if (on_ladder && (input == UP || input == DOWN)) { //사다리 위아래 이동
 		if (next_y >= 0 && input == UP && map[stage][next_y][player_x] == '#'){ //사다리 끝에서 위로 이동했을 때
@@ -298,28 +297,48 @@ void move_player(char input) {
     } else { // 사다리에서 위아래로 이동 중이 아닐때
         if (is_jumping) { // 점프중에~
             next_y = player_y + velocity_y;
-            if(next_y < 0) next_y = 0; // 0보다 작아지지 않게
-            velocity_y++; // 중력가속도(클수록 아래로)
-
-            if (velocity_y > 0 && (next_y > MAP_HEIGHT[stage] || map[stage][next_y][player_x] == '#')) { // 행선지가 땅일때, 땅보다 아래로 향할 때 (수정됨)
-				velocity_y = 0;
-            } else if (next_y < MAP_HEIGHT[stage]) { // 행선지가 땅에 닿지 않을 때
-                player_y = next_y;
-            }
 			
-            if ((player_y + 1 > MAP_HEIGHT[stage]) || map[stage][player_y + 1][player_x] == '#') { // 이미 땅에 닿아있을 때
+            if(next_y <= 0) next_y = 1; // 올라가다 천장을 뚫거나 박히지 않게 예외처리
+            velocity_y++; // 중력가속도(클수록 아래로)
+			
+			if (velocity_y > 0){ // 가속도가 아래로 향할 때 
+				if (next_y >= MAP_HEIGHT[stage]) next_y = MAP_HEIGHT[stage]-2; // 행선지가 맵 끝보다 아래로 향할 때 (수정됨)
+				else{ // 행선지가 맵 안이면
+					int layer = 0;
+					while (layer < next_y - player_y){// 현재 위치에서 목표 위치 사이에 블록이 있는지 확인
+						if(DEBUGGING) DBG("in while");
+						if(DEBUGGING) printf("at layer %d ", layer);
+						if(DEBUGGING) delay(30);
+						if (map[stage][player_y+layer][player_x] == '#'){
+							if(DEBUGGING) printf("land detected   ");
+							if(DEBUGGING) delay(30);
+							next_y = player_y+layer -1;
+							break;
+						}
+						layer++;
+					}
+				}
+			}
+			
+			player_y = next_y;
+			
+			if ((player_y + 1 > MAP_HEIGHT[stage]) || map[stage][player_y + 1][player_x] == '#') { // 이미 땅에 닿아있을 때
                 is_jumping = 0;
                 velocity_y = 0;
 				next_y = MAP_HEIGHT[stage]-1;
-            }
-        } else { // 점프중이 아니면~
+			}
+			
+        } else { // 점프중이 아니면~s
             if (floor_tile != '#' && floor_tile != 'H') { // 땅 위도 사다리 위도 아닐 때 (허공일 때)
-                 if (player_y + 1 < MAP_HEIGHT[stage]) player_y++; // 맵을 벗어나지 않으면 아래로 한 칸 이동
-                 else init_stage();
+				if (player_y+1 < MAP_HEIGHT[stage]) {is_jumping = 1; velocity_y = 1;} // 맵을 벗어나지 않으면 아래로 한 칸 이동
+                else init_stage();
             }
         }
     }
     
+	// 모든 계산 끝난 후 땅에 끼인경우 땅 위로 위치조정
+	if (map[stage][player_y][player_x] == '#') player_y--;
+	
     if (player_y >= MAP_HEIGHT[stage]) init_stage();
 	
 	if(DEBUGGING) DBG("move_player(); ended");
@@ -347,7 +366,7 @@ void move_enemies() {
 	if(DEBUGGING) delay(500);
 }
 
-// 충돌 감지 로직
+// 충돌 감지 로직 (251203 테스트 완)
 void check_collisions() {
 	if(DEBUGGING) DBG("check_collisions(); started");
 	if(DEBUGGING) delay(30);
