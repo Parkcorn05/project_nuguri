@@ -107,17 +107,29 @@ int main() {
     srand(time(NULL));
     enable_raw_mode();
 	
-    opening();
+    //opening();
+    printf("1");
 	  getMapSize();
-    
+    printf("getStage succed\n");
+printf("MAX STAGE : %d\n",MAX_STAGES);
+for (int i = 1; i < MAX_STAGES + 1; i++) {
+    printf("stage %d TEMP_HEIGHT size : %d\n", i, sizeof(TEMP_HEIGHT[i]));
+    printf("stage %d TEMP_WIDTH size : %d\n", i, sizeof(TEMP_WIDTH[i]));
+}
     //추가된
     setStage();
     getMapSize();
+      printf("getMapSize succed\n");
+  printf("map size : %d\n", MAX_STAGES);
+  for (int i = 0; i < MAX_STAGES ; i++) {
+      printf("stage %d TEMP_HEIGHT size : %d\n", i, TEMP_HEIGHT[i]);
+      printf("stage %d TEMP_WIDTH size : %d\n", i, TEMP_WIDTH[i]);
+  }
     MAP_HEIGHT = TEMP_HEIGHT[stage];
     MAP_WIDTH = TEMP_WIDTH[stage];
     //추가된
   
-  
+  printf("2");
     load_maps();
     init_stage();
 
@@ -472,15 +484,15 @@ void setMapMemory() {
 	if(DEBUGGING) delay(300);
 }
 
-void setMapMemory(int s, int width, int height) {
-    int i = 0;
-    TEMP_HEIGHT[s] = height;
-    TEMP_WIDTH[s] = width;
-    map[s] = (char**)malloc(sizeof(char*) * TEMP_HEIGHT[s]);  //MAP_HEIGHT
-    for (i = 0; i < TEMP_HEIGHT[s]; i++) {
-        map[s][i] = (char*)malloc(sizeof(char) * TEMP_WIDTH[s]); //MAP_WIDTH
-    }
-}
+// void setMapMemory(int s, int width, int height) {
+//     int i = 0;
+//     TEMP_HEIGHT[s] = height;
+//     TEMP_WIDTH[s] = width;
+//     map[s] = (char**)malloc(sizeof(char*) * TEMP_HEIGHT[s]);  //MAP_HEIGHT
+//     for (i = 0; i < TEMP_HEIGHT[s]; i++) {
+//         map[s][i] = (char*)malloc(sizeof(char) * TEMP_WIDTH[s]); //MAP_WIDTH
+//     }
+// }
 
 // 맵 사이즈 계산
 void getMapSize() {
