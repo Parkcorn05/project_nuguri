@@ -1,11 +1,22 @@
+GITHUB : https://github.com/Parkcorn05/project_nuguri
+
+20243097 박기정
+20223119 심민준
+20204083 김동휘
+20203097 천태웅
+
 # project_nuquri
-### **OS별 컴파일/실행 방법**
+### **(os공통) 컴파일/실행 방법**
 
-##### Windows
+##### 컴파일
+    make
 
-##### Linux
+##### 실행
+    ./nuguri
 
-##### MacOS
+##### 정리
+    clean
+
 
 ---
 

@@ -225,15 +225,15 @@ void draw_game() {
 	// line 229~238 251204 수정본
 	
 	// draw 신규 로직) 기존 한 문자씩 draw 하는것과 다르게 
-	char buffer[MAP_WIDTH[stage]+1];
-	buffer[MAP_WIDTH[stage]] = '\0';
-	
-	for (int y = 0; y < MAP_HEIGHT[stage]; y++) {
-        for(int x = 0; x < MAP_WIDTH[stage]; x++){
-			buffer[x] = display_map[y][x];
-        }
-		printf("%s\n", buffer);
+	char buffer[MAP_WIDTH[stage] + 1];
+
+    for (int y = 0; y < MAP_HEIGHT[stage]; y++) 
+    {
+        memcpy(buffer, display_map[y], MAP_WIDTH[stage]);
+        buffer[MAP_WIDTH[stage]] = '\0';
+        printf("%s\n", buffer);
     }
+
 	
 	// 0.05초마다 한번씩 연산하게 변경
 	delay(50);
@@ -440,7 +440,8 @@ void setMapMemory() {
     for(i = 0; i < MAX_STAGES; i++){ 
         map[i] = (char**)malloc(sizeof(char*) * MAP_HEIGHT[i]);  //MAP_HEIGHT
         for(j = 0; j < MAP_HEIGHT[i]; j++){
-            map[i][j] = (char*)malloc(sizeof(char) * MAP_WIDTH[i]); //MAP_WIDTH
+            map[i][j] = (char*)malloc(sizeof(char) * (MAP_WIDTH[i] + 1));  // 널 문자 공간 포함
+            map[i][j][0] = '\0';  //MAP_WIDTH
         }
     }
 	
@@ -526,14 +527,14 @@ void mallocFree() {
 void readBanner(char* str, int height){
     FILE *file = fopen(str, "r");
     if (!file) {
-		perror("파일을 열 수 없습니다.");
-		exit(1);
+        perror("파일을 열 수 없습니다.");
+        exit(1);
     }
     int h = 0;
     char line[50];
 	
 	while (h<height && fgets(line, sizeof(line), file)) {
-		printf("%s", line);
+		printf(line);
 		h++;
 	}
 	fclose(file);
