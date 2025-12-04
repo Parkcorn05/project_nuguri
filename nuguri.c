@@ -500,7 +500,7 @@ void getMapSize() {
 	
 	if(DEBUGGING){
 		s = 0;
-		while(s < MAX_STAGES) printf("///in stage %d: MAP_WIDTH: %d, MAP_HEIGHT: %d   ", s++, MAP_WIDTH[s], MAP_HEIGHT[s]);
+		while(s < MAX_STAGES) printf("///in stage %d: MAP_WIDTH: %d, MAP_HEIGHT: %d   ", s+1, MAP_WIDTH[s], MAP_HEIGHT[s]);
 		DBG("getMapSize(); ended");
 		delay(500);
 	}
@@ -529,8 +529,7 @@ void readBanner(char* str, int height){
 		perror("파일을 열 수 없습니다.");
 		exit(1);
     }
-    int h = 0, r = 0;
-    char C;
+    int h = 0;
     char line[50];
 	
 	while (h<height && fgets(line, sizeof(line), file)) {
