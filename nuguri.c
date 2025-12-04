@@ -189,6 +189,10 @@ void init_stage() {
 // 게임 화면 그리기 (251203 수정 완)
 void draw_game() {
 	if(DEBUGGING) DBG("draw_game(); started");
+
+	if(DEBUGGING) delay(300);
+    delay(150);  //속도 조절
+
     clrscr();
     printf("Stage: %d | Score: %d\n", stage + 1, score);
     printf("HP: %d\n", hp); // 플레이어 체력 표시
@@ -262,6 +266,7 @@ void move_player(char input) {
 	if(DEBUGGING) DBG("move_player(); started");
 	
     int next_x = player_x, next_y = player_y;
+    int i;
     char floor_tile = (player_y + 1 < MAP_HEIGHT[stage]) ? map[stage][player_y + 1][player_x] : '#';
 	// 삼항연산자, (조건) ? (참일때 값) : (거짓일 때 값)
 	// floor_tile : 플레이어 발 아래의 블록이 무엇인지
@@ -296,7 +301,14 @@ void move_player(char input) {
         }
     } else { // 사다리에서 위아래로 이동 중이 아닐때
         if (is_jumping) { // 점프중에~
+            
             next_y = player_y + velocity_y;
+            for(i = 1; player_y - i >= next_y; i++){ //점프 경로에 천장 체크
+                if(map[stage][player_y - i][player_x] == '#'){ 
+                    next_y = player_y - i + 1;
+                    break;
+                }
+            }
 			
 			if(next_y <= 0) next_y = 1; // 올라가다 천장을 뚫거나 박히지 않게 예외처리
 			
@@ -362,11 +374,17 @@ void move_enemies() {
 	
     for (int i = 0; i < enemy_count; i++) {
         int next_x = enemies[i].x + enemies[i].dir;
-        if (next_x < 0 || next_x >= MAP_WIDTH[stage] || map[stage][enemies[i].y][next_x] == '#' || (enemies[i].y + 1 < MAP_HEIGHT[stage] && map[stage][enemies[i].y + 1][next_x] == ' ')) {
+        if (next_x < 0 || next_x >= MAP_WIDTH[stage] || map[stage][enemies[i].y][next_x] == '#' || (enemies[i].y + 1 < MAP_HEIGHT[stage] && map[stage][enemies[i].y + 1][next_x] == ' ' && map[stage][enemies[i].y + 1][enemies[i].x] == '#')) { //떠있는 적이랑 걸어다닌 적 구분
             enemies[i].dir *= -1;
 			next_x = enemies[i].x + enemies[i].dir; // 추가
 		}
-        enemies[i].x = next_x; // 좌우 끝칸에서 한 번 멈추지 않게 수정
+
+        //enemies[i].x = next_x; // 좌우 끝칸에서 한 번 멈추지 않게 수정 //12.4 몬스터가 벽 뚫음 (임시 제거)
+		
+         else {
+            enemies[i].x = next_x;
+        }
+
     }
 	
 	if(DEBUGGING) DBG("move_enemies(); ended");
@@ -399,7 +417,7 @@ void check_collisions() {
 }
 
     for (int i = 0; i < coin_count; i++) {
-        if (!coins[i].collected && player_x == coins[i].x && player_y == coins[i].y) {
+        if (!coins[i].collected && ((player_x == coins[i].x && player_y == coins[i].y) || (is_jumping != 0 && player_y + 1 == coins[i].y && player_x == coins[i].x))) {
             beep();
             coins[i].collected = 1;
             score += 20;
@@ -483,7 +501,7 @@ void getMapSize() {
 	
 	if(DEBUGGING){
 		s = 0;
-		while(s < MAX_STAGES) printf("///in stage %d: MAP_WIDTH: %d, MAP_HEIGHT: %d   ", s++, MAP_WIDTH[s], MAP_HEIGHT[s]);
+		while(s < MAX_STAGES) printf("///in stage %d: MAP_WIDTH: %d, MAP_HEIGHT: %d   ", s+1, MAP_WIDTH[s], MAP_HEIGHT[s]);
 		DBG("getMapSize(); ended");
 		delay(500);
 	}
@@ -514,24 +532,12 @@ void readBanner(char* str, int height){
     }
     int h = 0;
     char line[50];
-
-    while (h < height && fgets(line, sizeof(line), file)) 
-    {
-        /* 안전하게 출력 */
-        printf("%s", line);
-
-        /* 만약 줄이 버퍼보다 길어 잘렸다면 나머지를 소비(출력 이미 했으므로 줄바꿈만 유지) */
-        size_t len = strlen(line);
-        if (len > 0 && line[len-1] != '\n') {
-            int c;
-            while ((c = fgetc(file)) != EOF && c != '\n') {
-                putchar(c); /* 원하면 생략 가능 — 여기서는 화면 일관성 유지 위해 출력 */
-            }
-            putchar('\n');
-        }
-        h++;
-    }
-    fclose(file);
+	
+	while (h<height && fgets(line, sizeof(line), file)) {
+		printf(line);
+		h++;
+	}
+	fclose(file);
 }
 
 // 엔딩화면
@@ -608,4 +614,6 @@ void DBG(char* str){
 }
 
 
+
 // 기존 비프음 출력 함수 분리 및 헤더 파일로 이전 (기존 조장이 작업한 부분 복구, OS별 분리)
+
