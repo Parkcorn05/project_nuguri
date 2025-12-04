@@ -72,6 +72,7 @@ void setMapMemory();
 void getMapSize();
 void readBanner(char* str, int height);
 void opening();
+void ending();
 void mallocFree();
 void DBG(char* str); //debugging print
 
@@ -118,7 +119,7 @@ int main() {
                 init_stage();
             } else {
                 game_over = 1;
-                printf("\x1b[2J\x1b[H");
+                ending();
                 printf("축하합니다! 모든 스테이지를 클리어했습니다!\n");
                 printf("최종 점수: %d\n", score);
             }
@@ -190,9 +191,6 @@ void init_stage() {
 void draw_game() {
 	if(DEBUGGING) DBG("draw_game(); started");
 
-	if(DEBUGGING) delay(300);
-    delay(150);  //속도 조절
-
     clrscr();
     printf("Stage: %d | Score: %d\n", stage + 1, score);
     printf("HP: %d\n", hp); // 플레이어 체력 표시
@@ -225,27 +223,18 @@ void draw_game() {
 	// line 229~238 251204 수정본
 	
 	// draw 신규 로직) 기존 한 문자씩 draw 하는것과 다르게 
-	char buffer[MAP_WIDTH[stage] + 1];
-
-    for (int y = 0; y < MAP_HEIGHT[stage]; y++) 
-    {
-        memcpy(buffer, display_map[y], MAP_WIDTH[stage]);
-        buffer[MAP_WIDTH[stage]] = '\0';
-        printf("%s\n", buffer);
-    }
-
+	char buffer[MAP_WIDTH[stage]+1];
+	buffer[MAP_WIDTH[stage]] = '\0';
 	
-	// 0.05초마다 한번씩 연산하게 변경
-	delay(50);
-	
-	/* 기존 코드
-    for (int y = 0; y < MAP_HEIGHT[stage]; y++) {
+	for (int y = 0; y < MAP_HEIGHT[stage]; y++) {
         for(int x = 0; x < MAP_WIDTH[stage]; x++){
-            printf("%c", display_map[y][x]);
+			buffer[x] = display_map[y][x];
         }
-        printf("\n");
+		printf("%s\n", buffer);
     }
-	*/
+	
+	// 0.1초마다 한번씩 연산하게 변경
+	delay(100);
 	
 	if(DEBUGGING) DBG("draw_game(); ended");
 }
@@ -303,12 +292,14 @@ void move_player(char input) {
         if (is_jumping) { // 점프중에~
             
             next_y = player_y + velocity_y;
+			
+			/* 아래와 겹치는 코드로 삭제함
             for(i = 1; player_y - i >= next_y; i++){ //점프 경로에 천장 체크
                 if(map[stage][player_y - i][player_x] == '#'){ 
                     next_y = player_y - i + 1;
                     break;
                 }
-            }
+            }*/
 			
 			if(next_y <= 0) next_y = 1; // 올라가다 천장을 뚫거나 박히지 않게 예외처리
 			
@@ -379,11 +370,11 @@ void move_enemies() {
 			next_x = enemies[i].x + enemies[i].dir; // 추가
 		}
 
-        //enemies[i].x = next_x; // 좌우 끝칸에서 한 번 멈추지 않게 수정 //12.4 몬스터가 벽 뚫음 (임시 제거)
-		
+        enemies[i].x = next_x; // 좌우 끝칸에서 한 번 멈추지 않게 수정 //12.4 몬스터가 벽 뚫음 (임시 제거) // 벽 안뚫잖아 씹련아
+		/*
          else {
             enemies[i].x = next_x;
-        }
+        }*/
 
     }
 	
@@ -440,8 +431,7 @@ void setMapMemory() {
     for(i = 0; i < MAX_STAGES; i++){ 
         map[i] = (char**)malloc(sizeof(char*) * MAP_HEIGHT[i]);  //MAP_HEIGHT
         for(j = 0; j < MAP_HEIGHT[i]; j++){
-            map[i][j] = (char*)malloc(sizeof(char) * (MAP_WIDTH[i] + 1));  // 널 문자 공간 포함
-            map[i][j][0] = '\0';  //MAP_WIDTH
+            map[i][j] = (char*)malloc(sizeof(char) * MAP_WIDTH[i]); //MAP_WIDTH
         }
     }
 	
@@ -500,8 +490,7 @@ void getMapSize() {
     setMapMemory();
 	
 	if(DEBUGGING){
-		s = 0;
-		while(s < MAX_STAGES) printf("///in stage %d: MAP_WIDTH: %d, MAP_HEIGHT: %d   ", s+1, MAP_WIDTH[s], MAP_HEIGHT[s]);
+		for(s = 0; s < MAX_STAGES; s++) printf("///in stage %d: MAP_WIDTH: %d, MAP_HEIGHT: %d   ", s, MAP_WIDTH[s], MAP_HEIGHT[s]);
 		DBG("getMapSize(); ended");
 		delay(500);
 	}
@@ -527,14 +516,14 @@ void mallocFree() {
 void readBanner(char* str, int height){
     FILE *file = fopen(str, "r");
     if (!file) {
-        perror("파일을 열 수 없습니다.");
-        exit(1);
+		perror("파일을 열 수 없습니다.");
+		exit(1);
     }
     int h = 0;
     char line[50];
 	
 	while (h<height && fgets(line, sizeof(line), file)) {
-		printf(line);
+		printf("%s", line);
 		h++;
 	}
 	fclose(file);
@@ -544,7 +533,6 @@ void readBanner(char* str, int height){
 void ending(){
 	clrscr();
 	readBanner("endAni1.txt", 20);
-	printf(LF LF "             >> YOU WIN <<" LF LF);
 	return;
 }
 
@@ -616,4 +604,3 @@ void DBG(char* str){
 
 
 // 기존 비프음 출력 함수 분리 및 헤더 파일로 이전 (기존 조장이 작업한 부분 복구, OS별 분리)
-
