@@ -21,12 +21,6 @@
 #define MAX_ENEMIES 15 // 최대 적 수
 #define MAX_COINS 30   // 최대 코인 수
 
-// 방향키 판단을 위한 define (-32 catch 한 이후 판단)
-#define UP 72
-#define DOWN 80
-#define LEFT 75
-#define RIGHT 77
-
 
 // 구조체 정의
 typedef struct {
@@ -85,6 +79,8 @@ void DBG(char* str); //debugging print
 // 251203 수정 완
 int main() {
 	
+	ifWinSetUTF8();
+	
     srand(time(NULL));
     enable_raw_mode();
 	
@@ -103,8 +99,9 @@ int main() {
                 game_over = 1;
                 continue;
             }
-            if (c == -32) { // 화살표 입력 받기위한 (화살표 입력하면 -32가 먼저 입력된 후 72,80 등 고유 숫자가 입력됨.)
-                c = getch();
+            if (c == isArrow) { // 화살표 입력 받기위한 (화살표 입력하면 -32가 먼저 입력된 후 72,80 등 고유 숫자가 입력됨.)
+                if (braket == '[') getch(); // linux, macos 에서의 입력 관련
+				c = getch();
             }
 			while (kbhit()) { getch(); }
         } else {
@@ -573,8 +570,10 @@ void opening(){
 		gotoxy(0,14);
 		
 		c = getch();
-		if (c==-32){ //화살표 입력을 받았을 때
+		if (c==isArrow){ //화살표 입력을 받았을 때
+            if (braket == '[') getch(); // linux, macos 에서의 입력 관련
 			c = getch();
+			
 			if (c==LEFT && select!=0) {select--; gotoxy(x,14); printf(" ");}
 			else if (c==RIGHT && select!=1) {select++; gotoxy(x,14); printf(" ");}
 		} else if (c=='d'){ // 디버깅 모드 진입
