@@ -13,6 +13,8 @@ window.h : 윈도우 운영체제에서 참조하기 위해 만든 헤더파일,
 // 방향키 판단을 위한 define (isArrow catch 한 이후 판단)
 #define isArrow -32
 
+#define braket ' '
+
 #define UP 72
 #define DOWN 80
 #define RIGHT 77
