@@ -9,10 +9,12 @@ macos.h : 맥OS 운영체제에서 참조하기 위해 만든 헤더파일,
 #include <unistd.h>
 #include <fcntl.h>
 
-#define LF "\r" 
+#define LF "\n" 
 
 // 방향키 판단을 위한 define (isArrow catch 한 이후 판단)
 #define isArrow '\x1b'
+
+#define braket '['
 
 #define UP 'A'
 #define DOWN 'B'
